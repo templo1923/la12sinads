@@ -3,47 +3,52 @@ const axios = require('axios');
 const cors = require('cors');
 const app = express();
 
-// Permite que tu página web haga peticiones a este servidor
 app.use(cors());
 
+// --- CONFIGURACIÓN ---
+// Aquí guardamos la URL de tu lista M3U de forma segura.
+// ¡RECUERDA CAMBIAR LA CONTRASEÑA EN LA URL CUANDO TE LA DEN!
+const M3U_URL = "http://tutv.plus:8080/get.php?username=PAEJ1992&password=NUEVA_CONTRASENA&type=m3u_plus";
+
 app.get('/canal', async (req, res) => {
-    const channelName = req.query.stream;
+    // Ahora buscaremos por el nombre exacto del canal. Ej: ?nombre=Win Sports HD
+    const channelName = req.query.nombre;
     if (!channelName) {
-        return res.status(400).json({ error: 'Debes especificar un canal.' });
+        return res.status(400).json({ error: 'Debes especificar el nombre del canal. Ej: ?nombre=Win Sports HD' });
     }
 
-    // Obtenemos la IP real del usuario que hace la petición
-    const userIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket.remoteAddress;
-
-    const originalUrl = `https://la14hd.com/vivo/canales.php?stream=${channelName}`;
-
     try {
-        // Creamos una cabecera para enviar la IP del usuario a La14HD
-        const requestHeaders = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Referer': 'https://la14hd.com/eventos/',
-            'X-Forwarded-For': userIp
-        };
+        // 1. Descargamos el contenido completo de tu lista M3U como texto
+        const response = await axios.get(M3U_URL);
+        const m3uText = response.data;
 
-        const response = await axios.get(originalUrl, { headers: requestHeaders });
-        const html = response.data;
-        
-        // Buscamos la URL del video en el código de la página
-        const match = html.match(/var playbackURL = "(.*?)"/);
+        // 2. Procesamos el texto para encontrar el canal
+        const lines = m3uText.split('\n');
+        let foundUrl = null;
 
-        if (match && match[1]) {
-            const videoUrl = match[1];
-            res.json({ success: true, url: videoUrl });
+        for (let i = 0; i < lines.length; i++) {
+            // Buscamos la línea que contiene la información del canal
+            // La coma al final es para buscar el nombre exacto: ",Win Sports HD"
+            if (lines[i].startsWith('#EXTINF:') && lines[i].toLowerCase().includes(',' + channelName.toLowerCase())) {
+                // El enlace del video es la línea siguiente
+                foundUrl = lines[i + 1].trim();
+                break;
+            }
+        }
+
+        // 3. Devolvemos la URL encontrada o un error si no se encontró
+        if (foundUrl) {
+            res.json({ success: true, url: foundUrl });
         } else {
-            res.status(404).json({ success: false, error: 'No se pudo encontrar la URL del video.' });
+            res.status(404).json({ success: false, error: `El canal "${channelName}" no se encontró en la lista.` });
         }
 
     } catch (error) {
-        res.status(500).json({ success: false, error: 'Hubo un error al procesar la solicitud.' });
+        res.status(500).json({ success: false, error: 'No se pudo descargar o procesar la lista M3U.' });
     }
 });
 
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`✅ Servidor API iniciado en http://localhost:${PORT}`);
+    console.log(`✅ Servidor de Listas M3U iniciado en http://localhost:${PORT}`);
 });
