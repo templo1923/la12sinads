@@ -8,7 +8,7 @@ app.use(cors());
 // --- CONFIGURACIÓN ---
 // Aquí guardamos la URL de tu lista M3U de forma segura.
 // ¡RECUERDA CAMBIAR LA CONTRASEÑA EN LA URL CUANDO TE LA DEN!
-const M3U_URL = "http://tutv.plus:8080/get.php?username=PAEJ1992&password=NUEVA_CONTRASENA&type=m3u_plus";
+const M3U_URL = "http://tutv.plus:8080/get.php?username=PAEJ1992&password=PANDA2022&type=m3u_plus";
 
 app.get('/canal', async (req, res) => {
     // Ahora buscaremos por el nombre exacto del canal. Ej: ?nombre=Win Sports HD
@@ -52,3 +52,4 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`✅ Servidor de Listas M3U iniciado en http://localhost:${PORT}`);
 });
+
