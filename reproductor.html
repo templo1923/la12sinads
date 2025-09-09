@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reproductor Dinámico</title>
+    <script src="//cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
+        #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <div id="player"></div>
+    <div id="loading" style="color: white; text-align: center; padding-top: 40vh; font-family: sans-serif;">
+        Cargando canal...
+    </div>
+
+    <script>
+        // Función para obtener el nombre del canal de la URL de tu propia página
+        // Ejemplo: tupagina.com/ver.html?canal=winsportsplus
+        const urlParams = new URLSearchParams(window.location.search);
+        const channelName = urlParams.get('canal');
+
+        const playerElement = document.getElementById('player');
+        const loadingElement = document.getElementById('loading');
+        
+        if (channelName) {
+            // URL de tu servidor en Vercel
+            const apiUrl = `https://eventoshd.vercel.app/canal?stream=${channelName}`;
+
+            // Hacemos la petición a nuestro servidor para obtener la URL del video
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadingElement.style.display = 'none'; // Ocultamos el mensaje de "Cargando"
+                        
+                        // Inicializamos el reproductor Clappr con la URL que nos dio el servidor
+                        new Clappr.Player({
+                            source: data.url,
+                            parentId: "#player",
+                            width: "100%",
+                            height: "100%",
+                            autoPlay: true,
+                            mediacontrol: { seekbar: "#D4ED31", buttons: "#FFFFFF" }
+                        });
+                    } else {
+                        loadingElement.innerText = `Error: ${data.error}`;
+                    }
+                })
+                .catch(error => {
+                    loadingElement.innerText = `Error al conectar con el servidor: ${error}`;
+                });
+        } else {
+            loadingElement.innerText = 'Por favor, especifica un canal en la URL (ej: ?canal=winsportsplus)';
+        }
+    </script>
+</body>
+</html>
